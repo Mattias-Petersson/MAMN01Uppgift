@@ -1,5 +1,7 @@
 package com.example.mamn01_uppgift;
 
+import static java.lang.Math.abs;
+
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.graphics.Color;
@@ -12,16 +14,19 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import java.util.Arrays;
+import java.util.Random;
 
 public class CompassActivity extends AppCompatActivity {
 
     private ImageView compassImage;
     private TextView compassText;
+    private TextView calibrationText;
 
     private int counter = 0;
-    private final int averageCount = 3;
+    private final int averageCount = 7;
     private double[] angles = new double[averageCount];
     private double angle;
+    Random rand = new Random();
 
     private SensorManager sensorManager;
     private Sensor sensorAccelerometer;
@@ -38,6 +43,7 @@ public class CompassActivity extends AppCompatActivity {
         setContentView(R.layout.activity_compass);
         compassImage = findViewById(R.id.imageView);
         compassText = findViewById(R.id.textDegrees);
+        calibrationText = findViewById(R.id.textCalibrating);
 
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         sensorAccelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
@@ -60,7 +66,6 @@ public class CompassActivity extends AppCompatActivity {
             public void onSensorChanged(SensorEvent event) {
                 floatGeoMagnetic = event.values;
                 update();
-
             }
 
             @Override
@@ -75,27 +80,41 @@ public class CompassActivity extends AppCompatActivity {
     Takes an average of the last averageCount values read. Converts it into degrees and cuts off to two decimal places.
      */
     private void formatAngle() {
-        angles[counter% averageCount] = floatOrientation[0];
+        angles[counter % averageCount] = floatOrientation[0];
         counter++;
-        double toDegrees = (Math.toDegrees(Arrays.stream(angles).average().orElse(1.00)) + 360) % 360.0;
+
+        double toDegrees = (Math.toDegrees(Arrays.stream(angles).average().orElse(0.00)) + 360) % 360.0;
         angle = Math.round(toDegrees * 100) / 100.00;
 
     }
+
     private void update() {
-        formatAngle();
         updateOrientation();
-        updateColor();
-        compassText.setText(String.valueOf(angle));
+        formatAngle();
+        updateUI();
     }
-    private void updateColor() {
+
+    /*
+    Sets the background color to gray if they're pointing north. Sets text in degrees.
+    If the phone is moving too much and picking up too many wildly different sensor-values,
+    the average method in formatAngle will produce unpredictable results,
+     stabilityText aims to tell the user that they need to stabilize before the compass will behave
+     as it should again.
+     */
+    private void updateUI() {
+        compassText.setText(String.valueOf(angle) + "°");
         int c = (angle < 15 || angle > 345) ? Color.GRAY : Color.BLACK;
         this.getWindow().getDecorView().setBackgroundColor(c);
+
+        String stabilityText = Math.abs((angles[0] + angles[averageCount - 1]) / 2 - angles[rand.nextInt(averageCount)]) > 0.1 ?
+                "Calibrating, try holding the phone more stable" : "";
+        calibrationText.setText(stabilityText);
     }
 
     private void updateOrientation() {
         SensorManager.getRotationMatrix(floatRotationMatrix, null, floatGravity, floatGeoMagnetic);
         SensorManager.getOrientation(floatRotationMatrix, floatOrientation);
-        compassImage.setRotation((float)(-angle));
+        compassImage.setRotation((float) (-angle));
     }
 
 }
