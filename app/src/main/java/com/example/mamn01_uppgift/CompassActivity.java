@@ -45,6 +45,7 @@ public class CompassActivity extends AppCompatActivity {
         compassText = findViewById(R.id.textDegrees);
         calibrationText = findViewById(R.id.textCalibrating);
 
+
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         sensorAccelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         sensorMagneticField = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
@@ -82,8 +83,13 @@ public class CompassActivity extends AppCompatActivity {
     private void formatAngle() {
         angles[counter % averageCount] = floatOrientation[0];
         counter++;
-
-        double toDegrees = (Math.toDegrees(Arrays.stream(angles).average().orElse(0.00)) + 360) % 360.0;
+        double x = 0;
+        double y = 0;
+        for (double a : angles) {
+            x += Math.cos(a);
+            y += Math.sin(a);
+        }
+        double toDegrees = (Math.toDegrees(Math.atan2(y, x)) + 360) % 360;
         angle = Math.round(toDegrees * 100) / 100.00;
 
     }
@@ -103,8 +109,9 @@ public class CompassActivity extends AppCompatActivity {
      */
     private void updateUI() {
         compassText.setText(String.valueOf(angle) + "°");
-        int c = (angle < 15 || angle > 345) ? Color.GRAY : Color.BLACK;
+        int c = (angle < 15 || angle > 345) ? Color.GRAY : Color.GRAY - 1000;
         this.getWindow().getDecorView().setBackgroundColor(c);
+
 
         String stabilityText = Math.abs((angles[0] + angles[averageCount - 1]) / 2 - angles[rand.nextInt(averageCount)]) > 0.1 ?
                 "Calibrating, try holding the phone more stable" : "";
