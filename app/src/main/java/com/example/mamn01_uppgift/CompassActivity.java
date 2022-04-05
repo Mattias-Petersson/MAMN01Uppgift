@@ -112,8 +112,7 @@ public class CompassActivity extends AppCompatActivity {
         int c = (angle < 15 || angle > 345) ? Color.GRAY : Color.GRAY - 1000;
         this.getWindow().getDecorView().setBackgroundColor(c);
 
-
-        String stabilityText = Math.abs((angles[0] + angles[averageCount - 1]) / 2 - angles[rand.nextInt(averageCount)]) > 0.1 ?
+        String stabilityText = Math.abs((angles[0] + angles[averageCount - 1]) / 2 - angles[rand.nextInt(averageCount - 1) + 1]) > 0.1 ?
                 "Calibrating, try holding the phone more stable" : "";
         calibrationText.setText(stabilityText);
     }
